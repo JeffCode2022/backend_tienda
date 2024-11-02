@@ -1,9 +1,14 @@
 'use strict';
 
+// Cargar variables de entorno
+require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const http = require('http');
 const socketIO = require('socket.io');
+
+// Rutas
 const clienteRoute = require('./routes/cliente');
 const adminRoute = require('./routes/admin');
 const productoRoute = require('./routes/producto');
@@ -51,7 +56,13 @@ io.on('connection', (socket) => {
   ];
 
   events.forEach(({ event, response }) => {
-    socket.on(event, (data) => io.emit(response, data));
+    socket.on(event, (data) => {
+      try {
+        io.emit(response, data);
+      } catch (error) {
+        console.error(`Error en el evento ${event}:`, error);
+      }
+    });
   });
 
   socket.on('disconnect', () => {
@@ -62,7 +73,7 @@ io.on('connection', (socket) => {
 // Conexión a MongoDB Atlas
 const connectDB = async () => {
   try {
-    await mongoose.connect('mongodb+srv://jchungaz:%40chungadev@tienda.gnwuz.mongodb.net/tienda', {
+    await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
@@ -72,20 +83,6 @@ const connectDB = async () => {
     process.exit(1); // Termina el proceso si la conexión falla
   }
 };
-
-// // Conexión a MongoDB
-// const connectDB = async () => {
-//   try {
-//     await mongoose.connect('mongodb://127.0.0.1:27017/tienda', {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
-//     console.log('Conexión a MongoDB exitosa');
-//   } catch (error) {
-//     console.error('Error en la conexión a MongoDB:', error);
-//     process.exit(1); // Termina el proceso si la conexión falla
-//   }
-// };
 
 // Definición de rutas
 app.use('/api', clienteRoute);
