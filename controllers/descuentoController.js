@@ -6,20 +6,30 @@ const registro_descuento_admin = async function (req, res) {
     if (req.user) {
         if (req.user.role == 'admin') {
             let data = req.body;
-            var img_path = req.files.banner.path;
-            var name = img_path.split('\\');
-            var banner_name = name[2];
-            data.banner = banner_name;
-            let reg = await Descuento.create(data);
+            
+            // Verificar si se ha recibido un archivo de banner
+            if (req.files && req.files.banner) {
+                var img_path = req.files.banner.path;
+                var name = img_path.split('\\');
+                var banner_name = name[name.length - 1]; // Tomar el último elemento en caso de diferentes sistemas operativos
+                data.banner = banner_name;
+            } else {
+                return res.status(400).send({ message: 'El campo banner es obligatorio' });
+            }
 
-            res.status(200).send({ data: reg});
+            try {
+                let reg = await Descuento.create(data);
+                res.status(200).send({ data: reg, message: 'Descuento registrado con éxito' });
+            } catch (error) {
+                res.status(500).send({ message: 'Error al registrar el descuento', error });
+            }
         } else {
-            res.status(500).send({ message: 'NoAccess' });
+            res.status(403).send({ message: 'NoAccess' });
         }
     } else {
-        res.status(500).send({ message: 'NoAccess' });
+        res.status(403).send({ message: 'NoAccess' });
     }
-}
+};
 
 const listar_descuento_admin = async function (req, res) {
     if (req.user) {
@@ -93,7 +103,7 @@ const actualizar_descuento_admin = async function (req, res) {
                         });
                     }
                 })
-                res.status(200).send({ data: reg });
+                res.status(200).send({ data: reg, message: 'Descuento actualizado con éxito' });
             } else {
                 let reg = await Descuento.findByIdAndUpdate({ _id: id }, {
                     titulo: data.titulo,
